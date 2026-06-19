@@ -12,7 +12,7 @@ from systems.tags import get_matching_tags
 ASSET_DIR = Path(__file__).resolve().parents[2] / "assets"
 
 
-class Tower:
+class Tower(pygame.sprite.Sprite):
     loaded_sprites = {}
     base_sprite_file = "Turret_Base.png"
     cannon_sprite_file = None
@@ -32,6 +32,7 @@ class Tower:
         fire_rate,
         cost
     ):
+        super().__init__()
         self.grid_x = grid_x
         self.grid_y = grid_y
 
@@ -50,6 +51,9 @@ class Tower:
         self.angle = 0
         self.base_sprite = self.load_sprite(self.base_sprite_file)
         self.cannon_sprite = self.load_sprite(self.cannon_sprite_file)
+        self.image = None
+        self.rect = None
+        self._refresh_image()
 
     @classmethod
     def load_sprite(cls, sprite_file):
@@ -99,11 +103,12 @@ class Tower:
 
         if target and self.cooldown <= 0:
 
-            projectiles.append(
+            projectiles.add(
                 self.create_projectile(target)
             )
 
             self.cooldown = self.fire_rate
+        self._refresh_image()
 
     def create_projectile(self, target):
         if self.projectile_type == "laser":
@@ -179,23 +184,39 @@ class Tower:
         return self.damage + bonus_damage
 
     def draw(self, screen):
-        if self.base_sprite:
-            base = self._scaled_sprite(self.base_sprite)
-            base_rect = base.get_rect(
-                center=(int(self.x), int(self.y))
-            )
-            screen.blit(base, base_rect)
+        screen.blit(self.image, self.rect)
 
-        if self.cannon_sprite:
-            cannon = self._scaled_sprite(self.cannon_sprite)
+    def _refresh_image(self):
+        base = self._scaled_sprite(self.base_sprite) if self.base_sprite else None
+        cannon = self._scaled_sprite(self.cannon_sprite) if self.cannon_sprite else None
+
+        base_w = base.get_width() if base else 0
+        base_h = base.get_height() if base else 0
+        cannon_w = cannon.get_width() if cannon else 0
+        cannon_h = cannon.get_height() if cannon else 0
+
+        rotated_cannon = None
+        if cannon:
             rotated_cannon = pygame.transform.rotate(
                 cannon,
                 self.angle + self.sprite_angle_offset
             )
-            cannon_rect = rotated_cannon.get_rect(
-                center=(int(self.x), int(self.y))
-            )
-            screen.blit(rotated_cannon, cannon_rect)
+            cannon_w = rotated_cannon.get_width()
+            cannon_h = rotated_cannon.get_height()
+
+        width = max(base_w, cannon_w, 1)
+        height = max(base_h, cannon_h, 1)
+        self.image = pygame.Surface((width, height), pygame.SRCALPHA)
+
+        if base:
+            base_rect = base.get_rect(center=(width // 2, height // 2))
+            self.image.blit(base, base_rect)
+
+        if rotated_cannon:
+            cannon_rect = rotated_cannon.get_rect(center=(width // 2, height // 2))
+            self.image.blit(rotated_cannon, cannon_rect)
+
+        self.rect = self.image.get_rect(center=(int(self.x), int(self.y)))
 
     def _scaled_sprite(self, sprite):
         if self.sprite_scale == 1.0:

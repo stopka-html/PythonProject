@@ -9,7 +9,7 @@ SPRITE_ANGLE_OFFSET = 90
 
 #Here lies the enemy class, as well as checks for movement, health, damage, and enemy visuals.
 #Enemy class. Among the standard paremers, this one also carries the reward for killing the enemy, and checks the relative path coorinates for spawning.
-class Enemy:
+class Enemy(pygame.sprite.Sprite):
     loaded_sprites = {}
     tags = []
 
@@ -21,6 +21,7 @@ class Enemy:
         metal_reward,
         sprite_file=None
     ):
+        super().__init__()
         self.path = path
         self.health = health
         self.max_health = health
@@ -40,6 +41,9 @@ class Enemy:
         self.alive = True
         self.reached_end = False
         self.metal_collected = False
+        self.image = None
+        self.rect = None
+        self._refresh_image()
 
     @classmethod
     def load_sprite(cls, sprite_file):
@@ -58,6 +62,7 @@ class Enemy:
 
         if self.health <= 0:
             self.alive = False
+            self._refresh_image()
 
 #Enemy movement check and control.
     def update(self):
@@ -94,37 +99,45 @@ class Enemy:
         else:
             self.path_index += 1
 
+        self._refresh_image()
+
 #Draws the enemy and health bar visuals.
     def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def _refresh_image(self):
         if self.sprite:
             rotated_sprite = pygame.transform.rotate(
                 self.sprite,
                 self.angle + SPRITE_ANGLE_OFFSET
             )
+            width = max(rotated_sprite.get_width(), 32)
+            height = rotated_sprite.get_height() + 10
+            self.image = pygame.Surface((width, height), pygame.SRCALPHA)
             sprite_rect = rotated_sprite.get_rect(
-                center=(int(self.x), int(self.y))
+                center=(width // 2, height // 2 - 4)
             )
-            screen.blit(rotated_sprite, sprite_rect)
+            self.image.blit(rotated_sprite, sprite_rect)
         else:
+            self.image = pygame.Surface((self.radius * 2, self.radius * 2), pygame.SRCALPHA)
             pygame.draw.circle(
-                screen,
+                self.image,
                 (255, 0, 0),
-                (int(self.x), int(self.y)),
+                (self.radius, self.radius),
                 self.radius
             )
 
         bar_width = 32
-        health_ratio = self.health / self.max_health
-
+        health_ratio = max(0.0, self.health / self.max_health)
+        bar_x = (self.image.get_width() - bar_width) // 2
         pygame.draw.rect(
-            screen,
+            self.image,
             (255, 0, 0),
-            (self.x - 16, self.y - 28, bar_width, 5)
+            (bar_x, 0, bar_width, 5)
         )
-
         pygame.draw.rect(
-            screen,
+            self.image,
             (0, 255, 0),
-            (self.x - 16, self.y - 28,
-             bar_width * health_ratio, 5)
+            (bar_x, 0, int(bar_width * health_ratio), 5)
         )
+        self.rect = self.image.get_rect(center=(int(self.x), int(self.y)))

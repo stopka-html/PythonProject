@@ -84,14 +84,14 @@ class WaveManager:
             return
 
         enemy_class = self.spawn_queue.pop(0)
-        enemies.append(enemy_class(path))
+        enemies.add(enemy_class(path))
         self.spawn_timer = spawn_delay
 
     def check_cleared_wave(self, enemies):
         if (
             self.wave_active
             and not self.spawn_queue
-            and not enemies
+            and len(enemies) == 0
         ):
             self.current_wave_index += 1
             self.wave_active = False
@@ -101,5 +101,5 @@ class WaveManager:
             not self.all_waves_complete
             and not self.wave_active
             and not self.spawn_queue
-            and not enemies
+            and len(enemies) == 0
         )

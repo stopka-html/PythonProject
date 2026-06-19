@@ -1,6 +1,7 @@
 from game.grid import Grid
 from game.path import create_default_path
 from game.wave import WaveManager
+import pygame
 
 
 class GameReset:
@@ -28,9 +29,9 @@ class GameReset:
             "grid": grid,
             "path": grid.get_path_points(),
             "wave_manager": WaveManager(self.waves),
-            "enemies": [],
-            "towers": [],
-            "projectiles": [],
+            "enemies": pygame.sprite.Group(),
+            "towers": pygame.sprite.Group(),
+            "projectiles": pygame.sprite.Group(),
             "metal": starting_metal,
             "player_health": starting_health,
             "enemies_killed": 0

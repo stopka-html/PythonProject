@@ -263,7 +263,7 @@ while running:
                 tower_class = selected_option.payload
                 if metal >= tower_class.cost:
                     wx, wy = radial_menu.world_pos
-                    towers.append(
+                    towers.add(
                         tower_class(wx, wy)
                     )
                     metal -= tower_class.cost
@@ -315,16 +315,15 @@ while running:
         wave_was_active = wave_manager.wave_active
         wave_manager.update(enemies, path)
 
-        for enemy in enemies:
-            enemy.update()
+        
+        enemies.update()
 
-        for tower in towers:
-            tower.update(enemies, projectiles)
+        
+        towers.update(enemies, projectiles)
 
-        for projectile in projectiles:
-            projectile.update()
+        projectiles.update()
 
-        for enemy in enemies:
+        for enemy in list(enemies):
             if enemy.reached_end and not enemy.metal_collected:
                 player_health -= enemy.metal_reward
                 enemy.metal_collected = True
@@ -333,11 +332,8 @@ while running:
                 enemies_killed += 1
                 enemy.metal_collected = True
                 audio.play_random_explosion()
-
-        enemies = [
-            e for e in enemies
-            if e.alive
-        ]
+            if not enemy.alive:
+                enemies.remove(enemy)
         wave_manager.check_cleared_wave(enemies)
         if wave_was_active and not wave_manager.wave_active:
             audio.play_sfx("wave_over")
@@ -347,10 +343,9 @@ while running:
             radial_menu.close()
             main_menu.close()
 
-        projectiles = [
-            p for p in projectiles
-            if p.active
-        ]
+        for project in list(projectiles):
+            if not project.active:
+                projectiles.remove(project)
 
         if player_health <= 0:
             player_health = 0
@@ -388,14 +383,12 @@ while running:
         SCREEN_HEIGHT
     )
 
-    for enemy in enemies:
-        enemy.draw(screen)
+    
+    enemies.draw(screen)
 
-    for tower in towers:
-        tower.draw(screen)
+    towers.draw(screen)
 
-    for projectile in projectiles:
-        projectile.draw(screen)
+    projectiles.draw(screen)
 
     menu.draw(
         screen,

@@ -1,9 +1,10 @@
 import pygame
 import math
 
-class Projectile:
+class Projectile(pygame.sprite.Sprite):
 
     def __init__(self, x, y, target, damage, speed):
+        super().__init__()
         self.x = x
         self.y = y
 
@@ -13,6 +14,9 @@ class Projectile:
         self.speed = speed
 
         self.active = True
+        self.image = pygame.Surface((8, 8), pygame.SRCALPHA)
+        pygame.draw.circle(self.image, (255, 255, 0), (4, 4), 4)
+        self.rect = self.image.get_rect(center=(int(self.x), int(self.y)))
 
     def update(self):
         if not self.target.alive:
@@ -31,11 +35,4 @@ class Projectile:
 
         self.x += dx / distance * self.speed
         self.y += dy / distance * self.speed
-
-    def draw(self, screen):
-        pygame.draw.circle(
-            screen,
-            (255, 255, 0),
-            (int(self.x), int(self.y)),
-            4
-        )
+        self.rect.center = (int(self.x), int(self.y))
