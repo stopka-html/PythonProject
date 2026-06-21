@@ -5,7 +5,7 @@ class TankEnemy(Enemy):
     tags = [ARMORED]
     health = 750
     speed = 1
-    metal_reward = 50
+    metal_reward = 25
     sprite_file = "Armored_Robot.png"
     info = "A heavy, nearly-mech grade machine. This one's heat shielding can withstand atmospheric re-etry temps. Heavier arnaments will be needed to get through its shell... Or a sufficient quantity of lighter ones."
 

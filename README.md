@@ -15,6 +15,6 @@ Credits pending.
 
 
 
-    Game created by @OneFluffyKiriko.
+    Game created by @OneFluffyKiriko and @Underrated.
 
 

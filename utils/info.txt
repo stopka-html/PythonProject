@@ -1,16 +1,16 @@
 A simple TD game for a college assignment. 
 
 Created with Pygame and a lot of help from generative AI software, since i am very bad at this.
+Default values: Balance overhaul pending. 
 
+
+Special credits to: 
 Game sprites and assets belong to the Space Shooter Extension pack,
-owned and created by:
+owned and created by: 
  Kenney Vleugels (Kenney.nl)
    @KenneyNL on twitter.
 
-Soundtack belongs to Karl Casey @ White Bat Audio.
-
-Special credits to:
-Credits pending.
+Soundtack belongs to Karl Casey @ White Bat Audio. 
 
 
 

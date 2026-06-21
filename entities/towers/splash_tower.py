@@ -1,5 +1,5 @@
 from entities.towers.tower import Tower
-from systems.tags import ARMORED
+from systems.tags import ARMORED, HIGH_TECH
 
 
 class SplashTower(Tower):
@@ -9,11 +9,12 @@ class SplashTower(Tower):
     barrel_side_offset = 6
     tags = [ARMORED]
     tag_damage_modifiers = {
-        ARMORED: 40
+        ARMORED: 40,
+        HIGH_TECH: -10
     }
-    cost = 90
-    damage = 40
-    range_radius = 130
+    cost = 120
+    damage = 50
+    range_radius = 160
     fire_rate = 60
     info = "The Tartarus.Co Chemical Ablation Unit, also dubbed the Splash cannon, is a simple asteriod clearing implement that fires a self-propelled chemcical payload to melt rock. Today, hovewer, it will melt the frames of the enemy."
 

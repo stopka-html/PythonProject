@@ -2,7 +2,6 @@ from entities.enemies.basic_enemy import BasicEnemy
 from entities.enemies.fast_enemy import FastEnemy
 from entities.enemies.tank_enemy import TankEnemy
 
-
 ENEMY_TYPES = {
     "basic": BasicEnemy,
     "fast": FastEnemy,
