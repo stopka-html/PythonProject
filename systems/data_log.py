@@ -2,6 +2,8 @@ import math
 
 import pygame
 
+import systems.ui.baseUI
+
 
 DATA_LOG_MESSAGE = (
     "DATA LOG 044-F\n\n"
@@ -24,9 +26,10 @@ DATA_LOG_MESSAGE = (
 )
 
 
-class DataLog:
+class DataLog(systems.ui.baseUI.BaseUI):
 
     def __init__(self, screen_width, screen_height):
+        # super().__init__(0,0,0)
         self.font = pygame.font.SysFont(None, 22)
         self.title_font = pygame.font.SysFont(None, 54)
         self.small_font = pygame.font.SysFont(None, 24)
@@ -47,6 +50,9 @@ class DataLog:
         self.close_rect = pygame.Rect(0, 0, close_width, close_height)
         self.close_rect.centerx = self.panel_rect.centerx
         self.close_rect.bottom = self.panel_rect.bottom - 28
+
+        self._is_open = False
+        self._is_dissmissed = False
 
     def button_contains(self, mouse_pos):
         return self.button_rect.collidepoint(mouse_pos)
@@ -90,6 +96,7 @@ class DataLog:
         screen.blit(label, label_rect)
 
     def draw_panel(self, screen):
+
         shade = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         shade.fill((0, 0, 0, 170))
         screen.blit(shade, (0, 0))
@@ -165,6 +172,15 @@ class DataLog:
         )
         label_rect = label.get_rect(center=self.close_rect.center)
         screen.blit(label, label_rect)
+
+
+    @property
+    def is_open(self):
+        return self._is_open
+    
+    @property
+    def is_dissmissed(self):
+        return self._is_dissmissed
 
     def _fit_message_lines(self, max_width, max_height):
         for font_size in range(22, 15, -1):
@@ -256,3 +272,26 @@ class DataLog:
             parts.append(current_part)
 
         return parts
+    
+    def draw(self, screen):
+        if self.is_open:
+            self.draw_panel(screen)
+        if not self.is_open and not self.is_dissmissed:
+            print("draw button")
+            self.draw_button(screen, pygame.time.get_ticks())
+
+    def update(self, *args, **kwargs):
+
+        if self.is_open and self.is_dissmissed:
+            self._is_open = False
+        
+        if "mouse_pos" in kwargs and self.close_contains(kwargs["mouse_pos"]) and "click" in kwargs and kwargs["click"]:
+            self._is_dissmissed = True
+            self._is_open = False
+
+            return True
+
+        if(not self.is_dissmissed and self.button_contains(pygame.mouse.get_pos()) and "click" in kwargs and kwargs["click"]):
+            self._is_open = True
+            return True
+        return False

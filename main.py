@@ -129,11 +129,25 @@ main_menu = MainMenu(
     SCREEN_HEIGHT,
     runtime_settings
 )
+
+grid_layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+grid_layer.fill((0, 0, 0, 0))
+
+ui_layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+ui_layer.fill((0, 0, 0, 0))
+
+tower_layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+tower_layer.fill((0, 0, 0, 0))
+
+projectile_layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+projectile_layer.fill((0, 0, 0, 0))
+
+enemy_layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+enemy_layer.fill((0, 0, 0, 0))
+
 radial_menu = RadialMenu()
 build_options = create_build_options()
 enemy_options = create_enemy_options()
-data_log_open = False
-data_log_dismissed = False
 victory_open = False
 
 running = True
@@ -163,9 +177,9 @@ while running:
 
                 if victory_open:
                     continue
-                elif data_log_open:
-                    data_log_open = False
-                    data_log_dismissed = True
+                elif data_log.is_open:
+                    data_log._is_open = False
+                    data_log._is_dissmissed = True
                 elif radial_menu.is_open:
                     radial_menu.close()
                 else:
@@ -193,24 +207,13 @@ while running:
                         enemies_killed,
                         game_over_started_at
                     ) = reset_progress()
-                    data_log_open = False
-                    data_log_dismissed = False
+                    data_log._is_open = False
+                    data_log._is_dissmissed = False
                     victory_open = False
                 continue
+            
 
-            if data_log_open:
-                if data_log.close_contains(mouse_pos):
-                    data_log_open = False
-                    data_log_dismissed = True
-                continue
-
-            if (
-                not data_log_dismissed
-                and data_log.button_contains(mouse_pos)
-            ):
-                data_log_open = True
-                radial_menu.close()
-                main_menu.close()
+            if(data_log.update(click = True, mouse_pos = mouse_pos)):
                 continue
 
             if (
@@ -237,8 +240,7 @@ while running:
                         enemies_killed,
                         game_over_started_at
                     ) = reset_progress()
-                    data_log_open = False
-                    data_log_dismissed = False
+                    data_log._is_dissmissed = False
                     victory_open = False
 
                 continue
@@ -309,7 +311,7 @@ while running:
     if (
         game_over_started_at is None
         and not main_menu.is_open
-        and not data_log_open
+        and not data_log.is_open
         and not victory_open
     ):
         wave_was_active = wave_manager.wave_active
@@ -371,27 +373,31 @@ while running:
                 enemies_killed,
                 game_over_started_at
             ) = reset_progress()
-            data_log_open = False
-            data_log_dismissed = False
+            data_log._is_open = False
+            data_log._is_dissmissed = False
             victory_open = False
 
     screen.fill(BACKGROUND_COLOR)
+    grid_layer.fill((0, 0, 0, 0))
+    tower_layer.fill((0, 0, 0, 0))
+    projectile_layer.fill((0, 0, 0, 0))
+    ui_layer.fill((0, 0, 0, 0))
+    enemy_layer.fill((0, 0, 0, 0))
 
     grid.draw(
-        screen,
-        SCREEN_WIDTH,
-        SCREEN_HEIGHT
+        grid_layer,
+        grid_layer.get_width(),
+        grid_layer.get_height()
     )
-
     
-    enemies.draw(screen)
+    enemies.draw(enemy_layer)
 
-    towers.draw(screen)
+    towers.draw(tower_layer)
 
-    projectiles.draw(screen)
+    projectiles.draw(projectile_layer)
 
     menu.draw(
-        screen,
+        ui_layer,
         wave_manager.current_wave_number,
         enemies_killed,
         metal,
@@ -401,18 +407,24 @@ while running:
         wave_manager.all_waves_complete
     )
 
-    radial_menu.draw(screen, pygame.mouse.get_pos())
-    main_menu.draw_button(screen)
-    if not data_log_dismissed and not data_log_open:
-        data_log.draw_button(screen, pygame.time.get_ticks())
-    main_menu.draw_overlay(screen)
-    if data_log_open:
-        data_log.draw_panel(screen)
+    radial_menu.draw(ui_layer, pygame.mouse.get_pos())
+    main_menu.draw_button(ui_layer)
+
+    data_log.draw(ui_layer)
+
+    main_menu.draw_overlay(ui_layer)
+
     if victory_open:
-        victory_screen.draw(screen)
+        victory_screen.draw(ui_layer)
 
     if game_over_started_at is not None:
-        draw_game_over(screen)
+        draw_game_over(ui_layer)
+
+    screen.blit(grid_layer, (0, 0))
+    screen.blit(tower_layer, (0, 0))
+    screen.blit(projectile_layer, (0, 0))
+    screen.blit(enemy_layer, (0, 0))
+    screen.blit(ui_layer, (0, 0))
 
     pygame.display.flip()
 
