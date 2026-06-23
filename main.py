@@ -1,20 +1,22 @@
 import pygame
+from types import SimpleNamespace
 
 from utils.settings import  *
 
-from entities.towers.basic_tower import BasicTower
 from systems.wave_parameters import WAVES
 from systems.game_reset import GameReset
 from systems.ui.main_menu import MainMenu
 from systems.ui.radial_menu import RadialMenu
 from systems.ui.radial_menu_enemy import create_enemy_options
 from systems.ui.radial_menu_tower import (
-    create_affordable_build_options,
     create_build_options
 )
 from systems.ui.menu import Menu
 from systems.ui.data_log import DataLog
 from systems.ui.victory_screen import VictoryScreen
+from systems.ui.game_over_screen import GameOverScreen
+from systems.game_input import GameInputHandler
+from systems.game_renderer import create_render_layers, draw_game
 from systems import audio
 #This main function is actually incomprehensible 
 # TODO:
@@ -69,20 +71,25 @@ game_state = game_reset.create_state(
     runtime_settings["STARTING_HEALTH"],
     runtime_settings["GRID_SIZE"]
 )
-(
-    path_tiles,
-    grid,
-    path,
-    wave_manager,
-    enemies,
-    towers,
-    projectiles,
-    metal,
-    player_health,
-    enemies_killed
-) = unpack_state(game_state)
-
-game_over_started_at = None
+game_context = SimpleNamespace(
+    **dict(zip(
+        (
+            "path_tiles",
+            "grid",
+            "path",
+            "wave_manager",
+            "enemies",
+            "towers",
+            "projectiles",
+            "metal",
+            "player_health",
+            "enemies_killed"
+        ),
+        unpack_state(game_state)
+    )),
+    game_over_started_at=None,
+    victory_open=False
+)
 
 
 def reset_progress():
@@ -94,60 +101,32 @@ def reset_progress():
     return (*unpack_state(state), None)
 
 
-def draw_game_over(screen):
-    overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-    overlay.fill((0, 0, 0, 180))
-    screen.blit(overlay, (0, 0))
-
-    title_font = pygame.font.SysFont(None, 72)
-    small_font = pygame.font.SysFont(None, 30)
-
-    title = title_font.render("Game Over", True, (255, 90, 90))
-    title_rect = title.get_rect(
-        center=(screen.get_width() // 2, screen.get_height() // 2 - 28)
-    )
-    screen.blit(title, title_rect)
-
-    subtitle = small_font.render(
-        "Resetting progress...",
-        True,
-        (235, 235, 245)
-    )
-    subtitle_rect = subtitle.get_rect(
-        center=(screen.get_width() // 2, screen.get_height() // 2 + 32)
-    )
-    screen.blit(subtitle, subtitle_rect)
-
-
-
 menu = Menu(SCREEN_WIDTH, SCREEN_HEIGHT)
 data_log = DataLog(SCREEN_WIDTH, SCREEN_HEIGHT)
 victory_screen = VictoryScreen(SCREEN_WIDTH, SCREEN_HEIGHT)
+game_over_screen = GameOverScreen()
 main_menu = MainMenu(
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     runtime_settings
 )
 
-grid_layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-grid_layer.fill((0, 0, 0, 0))
-
-ui_layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-ui_layer.fill((0, 0, 0, 0))
-
-tower_layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-tower_layer.fill((0, 0, 0, 0))
-
-projectile_layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-projectile_layer.fill((0, 0, 0, 0))
-
-enemy_layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-enemy_layer.fill((0, 0, 0, 0))
-
+render_layers = create_render_layers((SCREEN_WIDTH, SCREEN_HEIGHT))
 radial_menu = RadialMenu()
 build_options = create_build_options()
 enemy_options = create_enemy_options()
-victory_open = False
+input_handler = GameInputHandler(
+    screen,
+    menu,
+    main_menu,
+    data_log,
+    radial_menu,
+    victory_screen,
+    build_options,
+    enemy_options,
+    reset_progress,
+    apply_audio_settings
+)
 
 running = True
 #Main game loop
@@ -157,273 +136,89 @@ while running:
     audio.update_music()
 
     for event in pygame.event.get():
-
-        if event.type == pygame.QUIT:
+        if not input_handler.handle_event(event, game_context):
             running = False
 
-        if event.type == pygame.MOUSEMOTION:
-            action = main_menu.handle_mouse_motion(event.pos)
-            if action == "settings_changed":
-                apply_audio_settings()
-
-        if event.type == pygame.MOUSEBUTTONUP:
-            main_menu.handle_mouse_up()
-
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                if game_over_started_at is not None:
-                    continue
-
-                if victory_open:
-                    continue
-                elif data_log.is_open:
-                    data_log._is_open = False
-                    data_log._is_dissmissed = True
-                elif radial_menu.is_open:
-                    radial_menu.close()
-                else:
-                    main_menu.toggle()
-
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if game_over_started_at is not None:
-                continue
-
-            mouse_pos = event.pos
-            gx, gy = grid.world_to_grid(mouse_pos)
-
-            if victory_open:
-                if victory_screen.restart_contains(mouse_pos):
-                    (
-                        path_tiles,
-                        grid,
-                        path,
-                        wave_manager,
-                        enemies,
-                        towers,
-                        projectiles,
-                        metal,
-                        player_health,
-                        enemies_killed,
-                        game_over_started_at
-                    ) = reset_progress()
-                    data_log._is_open = False
-                    data_log._is_dissmissed = False
-                    victory_open = False
-                continue
-            
-
-            if(data_log.update(click = True, mouse_pos = mouse_pos)):
-                continue
-
-            if (
-                main_menu.main_button_contains(mouse_pos)
-                or main_menu.is_open
-            ):
-                radial_menu.close()
-                action = main_menu.handle_click(mouse_pos)
-
-                if action == "settings_changed":
-                    apply_audio_settings()
-
-                if action == "restart":
-                    (
-                        path_tiles,
-                        grid,
-                        path,
-                        wave_manager,
-                        enemies,
-                        towers,
-                        projectiles,
-                        metal,
-                        player_health,
-                        enemies_killed,
-                        game_over_started_at
-                    ) = reset_progress()
-                    data_log._is_dissmissed = False
-                    victory_open = False
-
-                continue
-
-            if menu.wave_button_clicked(
-                mouse_pos,
-                wave_manager.cleared_wave
-            ):
-                radial_menu.close()
-                if wave_manager.start_next_wave():
-                    audio.play_sfx("wave_start")
-                    audio.start_music()
-                continue
-
-            if menu.wave_button_contains(mouse_pos):
-                radial_menu.close()
-                continue
-
-            selected_option = radial_menu.get_selected_option(mouse_pos)
-
-            if selected_option and selected_option.payload:
-                tower_class = selected_option.payload
-                if metal >= tower_class.cost:
-                    wx, wy = radial_menu.world_pos
-                    towers.add(
-                        tower_class(wx, wy)
-                    )
-                    metal -= tower_class.cost
-                    grid.place(*radial_menu.grid_pos)
-                    radial_menu.close()
-                continue
-
-            if radial_menu.grid_pos == (gx, gy):
-                radial_menu.close()
-                continue
-
-            if radial_menu.contains(mouse_pos):
-                continue
-
-            wx, wy = grid.grid_to_world(
-                gx,
-                gy,
-                clamp=True
-            )
-
-            if (gx, gy) in grid.path_tiles:
-                radial_menu.open(
-                    (gx, gy),
-                    (wx, wy),
-                    screen.get_size(),
-                    enemy_options
-                )
-            elif grid.can_place(gx, gy):
-                affordable_build_options = create_affordable_build_options(
-                    build_options,
-                    metal
-                )
-
-                radial_menu.open(
-                    (gx, gy),
-                    (wx, wy),
-                    screen.get_size(),
-                    affordable_build_options
-                )
-            else:
-                radial_menu.close()
-
     if (
-        game_over_started_at is None
+        game_context.game_over_started_at is None
         and not main_menu.is_open
         and not data_log.is_open
-        and not victory_open
+        and not game_context.victory_open
     ):
-        wave_was_active = wave_manager.wave_active
-        wave_manager.update(enemies, path)
+        wave_was_active = game_context.wave_manager.wave_active
+        game_context.wave_manager.update(game_context.enemies, game_context.path)
 
         
-        enemies.update()
+        game_context.enemies.update()
 
         
-        towers.update(enemies, projectiles)
+        game_context.towers.update(game_context.enemies, game_context.projectiles)
 
-        projectiles.update()
+        game_context.projectiles.update()
 
-        for enemy in list(enemies):
+        for enemy in list(game_context.enemies):
             if enemy.reached_end and not enemy.metal_collected:
-                player_health -= enemy.metal_reward
+                game_context.player_health -= enemy.metal_reward
                 enemy.metal_collected = True
             elif not enemy.alive and not enemy.metal_collected:
-                metal += enemy.metal_reward
-                enemies_killed += 1
+                game_context.metal += enemy.metal_reward
+                game_context.enemies_killed += 1
                 enemy.metal_collected = True
                 audio.play_random_explosion()
             if not enemy.alive:
-                enemies.remove(enemy)
-        wave_manager.check_cleared_wave(enemies)
-        if wave_was_active and not wave_manager.wave_active:
+                game_context.enemies.remove(enemy)
+        game_context.wave_manager.check_cleared_wave(game_context.enemies)
+        if wave_was_active and not game_context.wave_manager.wave_active:
             audio.play_sfx("wave_over")
 
-        if wave_manager.all_waves_complete:
-            victory_open = True
+        if game_context.wave_manager.all_waves_complete:
+            game_context.victory_open = True
             radial_menu.close()
             main_menu.close()
 
-        for project in list(projectiles):
+        for project in list(game_context.projectiles):
             if not project.active:
-                projectiles.remove(project)
+                game_context.projectiles.remove(project)
 
-        if player_health <= 0:
-            player_health = 0
-            game_over_started_at = pygame.time.get_ticks()
+        if game_context.player_health <= 0:
+            game_context.player_health = 0
+            game_context.game_over_started_at = pygame.time.get_ticks()
             audio.play_sfx("game_over")
             radial_menu.close()
             main_menu.close()
 
-    if game_over_started_at is not None:
-        elapsed_time = pygame.time.get_ticks() - game_over_started_at
+    if game_context.game_over_started_at is not None:
+        elapsed_time = pygame.time.get_ticks() - game_context.game_over_started_at
 
         if elapsed_time >= 3000:
             (
-                path_tiles,
-                grid,
-                path,
-                wave_manager,
-                enemies,
-                towers,
-                projectiles,
-                metal,
-                player_health,
-                enemies_killed,
-                game_over_started_at
+                game_context.path_tiles,
+                game_context.grid,
+                game_context.path,
+                game_context.wave_manager,
+                game_context.enemies,
+                game_context.towers,
+                game_context.projectiles,
+                game_context.metal,
+                game_context.player_health,
+                game_context.enemies_killed,
+                game_context.game_over_started_at
             ) = reset_progress()
             data_log._is_open = False
             data_log._is_dissmissed = False
-            victory_open = False
+            game_context.victory_open = False
 
-    screen.fill(BACKGROUND_COLOR)
-    grid_layer.fill((0, 0, 0, 0))
-    tower_layer.fill((0, 0, 0, 0))
-    projectile_layer.fill((0, 0, 0, 0))
-    ui_layer.fill((0, 0, 0, 0))
-    enemy_layer.fill((0, 0, 0, 0))
-
-    grid.draw(
-        grid_layer,
-        grid_layer.get_width(),
-        grid_layer.get_height()
+    draw_game(
+        screen,
+        render_layers,
+        game_context,
+        menu,
+        radial_menu,
+        main_menu,
+        data_log,
+        victory_screen,
+        game_over_screen
     )
-    
-    enemies.draw(enemy_layer)
-
-    towers.draw(tower_layer)
-
-    projectiles.draw(projectile_layer)
-
-    menu.draw(
-        ui_layer,
-        wave_manager.current_wave_number,
-        enemies_killed,
-        metal,
-        BasicTower.cost,
-        player_health,
-        wave_manager.cleared_wave,
-        wave_manager.all_waves_complete
-    )
-
-    radial_menu.draw(ui_layer, pygame.mouse.get_pos())
-    main_menu.draw_button(ui_layer)
-
-    data_log.draw(ui_layer)
-
-    main_menu.draw_overlay(ui_layer)
-
-    if victory_open:
-        victory_screen.draw(ui_layer)
-
-    if game_over_started_at is not None:
-        draw_game_over(ui_layer)
-
-    screen.blit(grid_layer, (0, 0))
-    screen.blit(tower_layer, (0, 0))
-    screen.blit(projectile_layer, (0, 0))
-    screen.blit(enemy_layer, (0, 0))
-    screen.blit(ui_layer, (0, 0))
 
     pygame.display.flip()
 

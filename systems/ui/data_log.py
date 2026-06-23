@@ -277,7 +277,6 @@ class DataLog(systems.ui.baseUI.BaseUI):
         if self.is_open:
             self.draw_panel(screen)
         if not self.is_open and not self.is_dissmissed:
-            print("draw button")
             self.draw_button(screen, pygame.time.get_ticks())
 
     def update(self, *args, **kwargs):
