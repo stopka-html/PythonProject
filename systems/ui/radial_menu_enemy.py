@@ -1,7 +1,7 @@
 from entities.enemies.basic_enemy import BasicEnemy
 from entities.enemies.fast_enemy import FastEnemy
 from entities.enemies.tank_enemy import TankEnemy
-from systems.radial_menu import RadialMenuOption
+from systems.ui.radial_menu import RadialMenuOption
 
 
 def create_enemy_option(label, enemy_class, color):

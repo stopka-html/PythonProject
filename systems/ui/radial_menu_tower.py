@@ -1,7 +1,7 @@
 from entities.towers.basic_tower import BasicTower
 from entities.towers.sniper_tower import SniperTower
 from entities.towers.splash_tower import SplashTower
-from systems.radial_menu import RadialMenuOption
+from systems.ui.radial_menu import RadialMenuOption
 
 
 def create_tower_option(label, tower_class, color, icon_path, enabled=True):

@@ -1,25 +1,24 @@
 import pygame
 
-from utils.settings import *
+from utils.settings import  *
 
 from entities.towers.basic_tower import BasicTower
 from systems.wave_parameters import WAVES
 from systems.game_reset import GameReset
-from systems.main_menu import MainMenu
-from systems.radial_menu import RadialMenu
-from systems.radial_menu_enemy import create_enemy_options
-from systems.radial_menu_tower import (
+from systems.ui.main_menu import MainMenu
+from systems.ui.radial_menu import RadialMenu
+from systems.ui.radial_menu_enemy import create_enemy_options
+from systems.ui.radial_menu_tower import (
     create_affordable_build_options,
     create_build_options
 )
-from systems.menu import Menu
-from systems.data_log import DataLog
-from systems.victory_screen import VictoryScreen
+from systems.ui.menu import Menu
+from systems.ui.data_log import DataLog
+from systems.ui.victory_screen import VictoryScreen
 from systems import audio
-
+#This main function is actually incomprehensible 
 # TODO:
 # Add a high-tier boss enemy.
-# Add more waves.
 # Finish turret and enemy balancing.
 pygame.init()
 pygame.display.set_caption("Iron Dome")
@@ -85,7 +84,7 @@ game_state = game_reset.create_state(
 
 game_over_started_at = None
 
-# TODO: Move the ui drawing out of main.py, into its own separate class.
+
 def reset_progress():
     state = game_reset.create_state(
         runtime_settings["STARTING_METAL"],
@@ -120,7 +119,7 @@ def draw_game_over(screen):
     screen.blit(subtitle, subtitle_rect)
 
 
-#This main function is actually incomprehensible 
+
 menu = Menu(SCREEN_WIDTH, SCREEN_HEIGHT)
 data_log = DataLog(SCREEN_WIDTH, SCREEN_HEIGHT)
 victory_screen = VictoryScreen(SCREEN_WIDTH, SCREEN_HEIGHT)

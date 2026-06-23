@@ -3,19 +3,15 @@ import math
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 800
 
-<<<<<<< HEAD
-FPS = 100
-=======
 FPS = 60
->>>>>>> a2e9c06 (Changes to wave sending mechanics and unit balancing tweaks.)
 
-GRID_SIZE = 40
+GRID_SIZE = 64
 
 STARTING_METAL = 250
 STARTING_HEALTH = 200
 
-EFFECTS_VOLUME = 3
-MUSIC_VOLUME = 3
+EFFECTS_VOLUME = 5
+MUSIC_VOLUME = 7
 
 ROWS = math.ceil(SCREEN_HEIGHT / GRID_SIZE)
 COLS = math.ceil(SCREEN_WIDTH / GRID_SIZE)
