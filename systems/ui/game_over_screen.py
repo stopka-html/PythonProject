@@ -12,7 +12,7 @@ class GameOverScreen:
         overlay.fill((0, 0, 0, 180))
         screen.blit(overlay, (0, 0))
 
-        title = self.title_font.render("Game Over", True, (255, 90, 90))
+        title = self.title_font.render("Simulation Over", True, (255, 90, 90))
         title_rect = title.get_rect(
             center=(screen.get_width() // 2, screen.get_height() // 2 - 28)
         )

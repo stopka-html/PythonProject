@@ -182,6 +182,14 @@ class DataLog(systems.ui.baseUI.BaseUI):
     def is_dissmissed(self):
         return self._is_dissmissed
 
+    def dismiss(self):
+        self._is_open = False
+        self._is_dissmissed = True
+
+    def reset(self):
+        self._is_open = False
+        self._is_dissmissed = False
+
     def _fit_message_lines(self, max_width, max_height):
         for font_size in range(22, 15, -1):
             font = pygame.font.SysFont(None, font_size)
@@ -285,8 +293,7 @@ class DataLog(systems.ui.baseUI.BaseUI):
             self._is_open = False
         
         if "mouse_pos" in kwargs and self.close_contains(kwargs["mouse_pos"]) and "click" in kwargs and kwargs["click"]:
-            self._is_dissmissed = True
-            self._is_open = False
+            self.dismiss()
 
             return True
 

@@ -64,8 +64,7 @@ class GameInputHandler:
             return
 
         if self.data_log.is_open:
-            self.data_log._is_open = False
-            self.data_log._is_dissmissed = True
+            self.data_log.dismiss()
         elif self.radial_menu.is_open:
             self.radial_menu.close()
         else:
@@ -96,8 +95,7 @@ class GameInputHandler:
     def _handle_victory_click(self, mouse_pos, game_state):
         if self.victory_screen.restart_contains(mouse_pos):
             self._restart(game_state)
-            self.data_log._is_open = False
-            self.data_log._is_dissmissed = False
+            self.data_log.reset()
             game_state.victory_open = False
 
     def _handle_main_menu_click(self, mouse_pos, game_state):
@@ -115,7 +113,7 @@ class GameInputHandler:
 
         if action == "restart":
             self._restart(game_state)
-            self.data_log._is_dissmissed = False
+            self.data_log.reset()
             game_state.victory_open = False
 
         return True
@@ -187,16 +185,4 @@ class GameInputHandler:
         self.radial_menu.close()
 
     def _restart(self, game_state):
-        (
-            game_state.path_tiles,
-            game_state.grid,
-            game_state.path,
-            game_state.wave_manager,
-            game_state.enemies,
-            game_state.towers,
-            game_state.projectiles,
-            game_state.metal,
-            game_state.player_health,
-            game_state.enemies_killed,
-            game_state.game_over_started_at
-        ) = self.reset_progress()
+        self.reset_progress(game_state)
